@@ -1,9 +1,8 @@
+import os, glob, shutil
 from uiautomator import device as d
 from uiautomator import Adb
 import inquirer
 from inquirer.themes import GreenPassion
-
-adb = Adb()
 
 
 def takeScreenshot():
@@ -39,34 +38,34 @@ def processIndividual():
     if not inquirer.confirm("¿Está abierto el chat?", default=True):
         return
 
-    print('\x1b[6;30;44m' + 'Proceso iniciado...' + '\x1b[0m')
     d(resourceId='com.whatsapp:id/conversation_contact').click.wait()
     takeScreenshot()
     d.press.back()
     scrollBackward()
-    print('\x1b[6;30;42m' + 'Proceso terminado' + '\x1b[0m')
+    for file in glob.glob('./*.png'):
+        shutil.move(os.path.join(".", file), os.path.join(".", "screenshots", file))
 
 
 if __name__ == "__main__":
+    adb = Adb()
 
-    questions = [
-        inquirer.Confirm(
-            "conectado",
-            message=f'¿Es correcto el S/N: {adb.device_serial()}?',
-            default=True,
-        ),
-        inquirer.Confirm(
-            "individual",
-            message="¿Es una extracción individual?",
-            default=True,
-        ),
-    ]
+    try:
+        print(f'Dispositivo con S/N: {adb.device_serial()}')
 
-    answers = inquirer.prompt(questions, theme=GreenPassion())
-    if not answers['conectado']:
-        quit()
+        questions = [
+            inquirer.Confirm(
+                "individual",
+                message="¿Es una extracción individual?",
+                default=True,
+            ),
+        ]
 
-    if answers['individual']:
-        processIndividual()
-    else:
-        print("Extracción múltiple no implementada")
+        answers = inquirer.prompt(questions, theme=GreenPassion())
+
+        if answers['individual']:
+            processIndividual()
+        else:
+            print("Extracción múltiple no implementada")
+
+    except EnvironmentError:
+        print("Dispositivo no detectado o desconectado")
